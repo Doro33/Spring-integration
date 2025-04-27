@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:int="http://www.springframework.org/schema/integration"
+       xmlns:file="http://www.springframework.org/schema/integration/file"
+       xsi:schemaLocation="
+           http://www.springframework.org/schema/beans
+           https://www.springframework.org/schema/beans/spring-beans.xsd
+           http://www.springframework.org/schema/integration
+           https://www.springframework.org/schema/integration/spring-integration.xsd
+           http://www.springframework.org/schema/integration/file
+           https://www.springframework.org/schema/integration/file/spring-integration-file.xsd">
+
+    <!-- Channels -->
+    <int:channel id="fileInputChannel"/>
+    <int:channel id="fileLinesChannel"/>
+    <int:channel id="dbChannel"/>
+    <int:channel id="fileCopyChannel"/>
+
+    <!-- File Reader -->
+    <file:inbound-channel-adapter id="fileReader"
+                                  directory="input"
+                                  filename-pattern="*.txt"
+                                  channel="fileInputChannel">
+        <int:poller fixed-rate="1000"/>
+    </file:inbound-channel-adapter>
+
+    <!--
+     Message Handler
+    <int:service-activator input-channel="fileInputChannel"
+                           output-channel="nullChannel">
+        <bean class="com.example.integrationpractice.FileMessageHandler"/>
+    </int:service-activator>
+    -->
+    <!-- Splitter: Split file content line by line -->
+    <int:splitter input-channel="fileInputChannel"
+                  output-channel="fileLinesChannel">
+        <bean class="com.example.integrationpractice.FileSplitter"/>
+    </int:splitter>
+
+    <!--
+    Service Activator: Handle each line
+    <int:service-activator input-channel="fileLinesChannel"
+                           output-channel="nullChannel">
+        <bean class="com.example.integrationpractice.LineMessageHandler"/>
+    </int:service-activator>
+    -->
+
+    <!-- Router
+    <int:router input-channel="fileLinesChannel"
+                default-output-channel="nullChannel">
+        <bean class="com.example.integrationpractice.LineRouter"/>
+    </int:router>
+    -->
+
+    <!-- Recipient List Router-->
+    <int:recipient-list-router input-channel="fileLinesChannel"
+                               default-output-channel="nullChannel">
+        <int:recipient channel="dbChannel" selector-expression="@lineRouter.isGmail(payload)"/>
+        <int:recipient channel="fileCopyChannel" selector-expression="@lineRouter.hasName(payload)"/>
+    </int:recipient-list-router>
+
+
+    <!-- DB Handler -->
+    <int:service-activator input-channel="dbChannel"
+                           output-channel="nullChannel">
+        <bean class="com.example.integrationpractice.DbHandler"/>
+    </int:service-activator>
+
+    <!-- File Copy Handler -->
+    <int:service-activator input-channel="fileCopyChannel"
+                           output-channel="nullChannel">
+        <bean class="com.example.integrationpractice.FileCopyHandler"/>
+    </int:service-activator>
+
+
+</beans>
