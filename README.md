@@ -1,0 +1,1 @@
+in "INTEGRATION_PRACTICE" : In this practice an input file is read and split into lines, then a Recipient List Router route the lines in appropriate channel, and there are 2 possible scenario, they could be saved in data base or be copied in another file.
