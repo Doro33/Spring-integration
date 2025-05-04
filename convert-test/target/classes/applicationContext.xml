@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:int="http://www.springframework.org/schema/integration"
+       xmlns:int-http="http://www.springframework.org/schema/integration/http"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="
+           http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans.xsd
+           http://www.springframework.org/schema/integration
+           http://www.springframework.org/schema/integration/spring-integration.xsd
+           http://www.springframework.org/schema/integration/http
+           http://www.springframework.org/schema/integration/http/spring-integration-http.xsd
+           http://www.springframework.org/schema/context
+           http://www.springframework.org/schema/context/spring-context.xsd">
+
+    <context:component-scan base-package="com.example"/>
+
+    <!-- Channels -->
+    <int:channel id="inputChannel"/>
+
+
+    <!-- Gateways -->
+    <int-http:inbound-gateway
+            id="httpGateway"
+            request-channel="inputChannel"
+            path="/{url}/{id}"
+            supported-methods="GET"
+            reply-channel="replyChannel"
+            error-channel="errorChannel"/>
+
+    <!-- Invalid URL gateways -->
+    <int-http:inbound-gateway
+            path="/{url}"
+            request-channel="inputChannel"
+            supported-methods="GET"
+            reply-channel="replyChannel"
+            error-channel="errorChannel"/>
+
+    <int-http:inbound-gateway
+            path="/{url}/"
+            request-channel="inputChannel"
+            supported-methods="GET"
+            reply-channel="replyChannel"
+            error-channel="errorChannel"/>
+
+    <int-http:inbound-gateway
+            path="/"
+            request-channel="inputChannel"
+            supported-methods="GET"
+            reply-channel="replyChannel"
+            error-channel="errorChannel"/>
+
+    <!-- Main Flow -->
+    <int:chain input-channel="inputChannel"
+               output-channel="replyChannel">
+
+        <!-- Step 1: Extract URL from message headers -->
+        <int:transformer expression="headers['http_requestUrl']"/>
+
+        <!-- Step 2: Validate URL -->
+        <int:service-activator ref="validator" method="urlValidation"/>
+
+        <!-- Step 3: Extract & validate ID from URL -->
+        <int:transformer ref="validator" method="idValidator"/>
+
+        <!-- Step 4: Call SOAP service -->
+        <int:service-activator ref="soapCaller" method="callSoap"/>
+
+        <!-- Step 5: Convert XML to Person object -->
+        <int:transformer ref="modelTransformer" method="convertSoapToObject"/>
+
+        <!-- Step 6: Build CustomResponse from Person -->
+        <int:transformer expression="new com.example.converttest.base.response.CustomResponse(payload)"/>
+    </int:chain>
+
+
+</beans>

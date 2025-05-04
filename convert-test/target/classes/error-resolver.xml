@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:int="http://www.springframework.org/schema/integration"
+       xsi:schemaLocation="
+           http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans.xsd
+           http://www.springframework.org/schema/integration
+           http://www.springframework.org/schema/integration/spring-integration.xsd">
+
+    <int:channel id="replyChannel"/>
+    <int:channel id="errorChannel"/>
+
+    <!-- Exception Type Router -->
+    <int:exception-type-router input-channel="errorChannel"
+                               default-output-channel="unknownExceptionChannel">
+        <int:mapping exception-type="com.example.converttest.exception.UrlException" channel="urlExceptionChannel"/>
+        <int:mapping exception-type="com.example.converttest.exception.IdException" channel="idExceptionChannel"/>
+        <int:mapping exception-type="com.example.converttest.exception.ConnectionException" channel="connectionExceptionChannel"/>
+        <int:mapping exception-type="com.example.converttest.exception.TransformException" channel="transformExceptionChannel"/>
+    </int:exception-type-router>
+
+    <!-- Transformers for Each Exception Type -->
+    <int:transformer input-channel="urlExceptionChannel"
+                     output-channel="replyChannel"
+                     expression="new com.example.converttest.base.response.CustomResponse(
+                     T(com.example.converttest.base.enums.Status).INVALID_URL, payload.message)"/>
+
+    <int:transformer input-channel="idExceptionChannel"
+                     output-channel="replyChannel"
+                     expression="new com.example.converttest.base.response.CustomResponse(
+                     T(com.example.converttest.base.enums.Status).INVALID_ID, payload.message)"/>
+
+    <int:transformer input-channel="connectionExceptionChannel"
+                     output-channel="replyChannel"
+                     expression="new com.example.converttest.base.response.CustomResponse(
+                     T(com.example.converttest.base.enums.Status).SITE_DOES_NOT_RESPONSE, payload.message)"/>
+
+    <int:transformer input-channel="transformExceptionChannel"
+                     output-channel="replyChannel"
+                     expression="new com.example.converttest.base.response.CustomResponse(
+                     T(com.example.converttest.base.enums.Status).CANNOT_CONVERT_XML_TO_JSON, payload.message)"/>
+
+    <int:transformer input-channel="unknownExceptionChannel"
+                     output-channel="replyChannel"
+                     expression="new com.example.converttest.base.response.CustomResponse(
+                     T(com.example.converttest.base.enums.Status).UNKNOWN_ERROR, 'Unexpected error: ' + payload.message)"/>
+
+</beans>
