@@ -11,6 +11,9 @@
     <int:channel id="replyChannel"/>
     <int:channel id="errorChannel"/>
 
+    <int:channel id="shebaOutputChannel"/>
+    <int:channel id="shebaErrorChannel"/>
+
     <!-- Exception Type Router -->
     <int:exception-type-router input-channel="errorChannel"
                                default-output-channel="unknownExceptionChannel">
@@ -20,30 +23,57 @@
         <int:mapping exception-type="com.example.converttest.exception.TransformException" channel="transformExceptionChannel"/>
     </int:exception-type-router>
 
+    <!-- Ayande Exception Type Router -->
+    <int:exception-type-router input-channel="shebaErrorChannel"
+                               default-output-channel="ayandeUnkownExceptionCHannel">
+        <int:mapping exception-type="com.example.ayande.exception.ShebaNumberException" channel="shebaNumberExceptionChannel"/>
+        <int:mapping exception-type="com.example.ayande.exception.AyandeShebaException" channel="ayandeShebaExceptionChannel"/>
+        <int:mapping exception-type="com.example.ayande.exception.AccountNumberException" channel="accountNumberExceptionChannel"/>
+    </int:exception-type-router>
+
     <!-- Transformers for Each Exception Type -->
     <int:transformer input-channel="urlExceptionChannel"
                      output-channel="replyChannel"
                      expression="new com.example.converttest.base.response.CustomResponse(
-                     T(com.example.converttest.base.enums.Status).INVALID_URL, payload.message)"/>
+                     T(com.example.converttest.base.enums.ConvertStatus).INVALID_URL, payload.message)"/>
 
     <int:transformer input-channel="idExceptionChannel"
                      output-channel="replyChannel"
                      expression="new com.example.converttest.base.response.CustomResponse(
-                     T(com.example.converttest.base.enums.Status).INVALID_ID, payload.message)"/>
+                     T(com.example.converttest.base.enums.ConvertStatus).INVALID_ID, payload.message)"/>
 
     <int:transformer input-channel="connectionExceptionChannel"
                      output-channel="replyChannel"
                      expression="new com.example.converttest.base.response.CustomResponse(
-                     T(com.example.converttest.base.enums.Status).SITE_DOES_NOT_RESPONSE, payload.message)"/>
+                     T(com.example.converttest.base.enums.ConvertStatus).SITE_DOES_NOT_RESPONSE, payload.message)"/>
 
     <int:transformer input-channel="transformExceptionChannel"
                      output-channel="replyChannel"
                      expression="new com.example.converttest.base.response.CustomResponse(
-                     T(com.example.converttest.base.enums.Status).CANNOT_CONVERT_XML_TO_JSON, payload.message)"/>
+                     T(com.example.converttest.base.enums.ConvertStatus).CANNOT_CONVERT_XML_TO_JSON, payload.message)"/>
 
     <int:transformer input-channel="unknownExceptionChannel"
                      output-channel="replyChannel"
                      expression="new com.example.converttest.base.response.CustomResponse(
-                     T(com.example.converttest.base.enums.Status).UNKNOWN_ERROR, 'Unexpected error: ' + payload.message)"/>
+                     T(com.example.converttest.base.enums.ConvertStatus).UNKNOWN_ERROR, 'Unexpected error: ' + payload.message)"/>
 
+    <int:transformer input-channel="shebaNumberExceptionChannel"
+                     output-channel="shebaOutputChannel"
+                     expression="new com.example.ayande.base.AyandeResponse(
+                     T(com.example.ayande.base.AyandeStatus).INVALID_SHEBA_NUMBER, payload.message)"/>
+
+    <int:transformer input-channel="ayandeShebaExceptionChannel"
+                     output-channel="shebaOutputChannel"
+                     expression="new com.example.ayande.base.AyandeResponse(
+                     T(com.example.ayande.base.AyandeStatus).SHEBA_DOES_NOT_BELONG_TO_AYANDEH_BANK, payload.message)"/>
+
+    <int:transformer input-channel="accountNumberExceptionChannel"
+                     output-channel="shebaOutputChannel"
+                     expression="new com.example.ayande.base.AyandeResponse(
+                     T(com.example.ayande.base.AyandeStatus).INVALID_ACCOUNT_NUMBER, payload.message)"/>
+
+    <int:transformer input-channel="ayandeUnkownExceptionCHannel"
+                     output-channel="shebaOutputChannel"
+                     expression="new com.example.ayande.base.AyandeResponse(
+                     T(com.example.ayande.base.AyandeStatus).UNKNOWN_ERROR, payload.message)"/>
 </beans>

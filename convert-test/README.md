@@ -17,7 +17,7 @@ It then transforms the SOAP XML response into JSON and returns the result.
 ## Usage
 
 When you call the API, it returns a response based on the outcome of the operation.
-Each response includes a status code for clarity:
+Each response includes a convertStatus code for clarity:
 
 - **Code 0:** Everything worked perfectly.
 - **Code 1:** The provided URL is not valid.
@@ -35,7 +35,7 @@ http://localhost:8080/my-endpoint/1
 {
 "referenceId": "c7d47aac-0978-4c9c-9da1-f5c99191ebac",
 "code": "0",
-"status": "OK",
+"convertStatus": "OK",
 "errorMessage": null,
 "person": {
 "findPersonResult": {

@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:int="http://www.springframework.org/schema/integration"
+       xmlns:int-http="http://www.springframework.org/schema/integration/http"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="
+           http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans.xsd
+           http://www.springframework.org/schema/integration
+           http://www.springframework.org/schema/integration/spring-integration.xsd
+           http://www.springframework.org/schema/integration/http
+           http://www.springframework.org/schema/integration/http/spring-integration-http.xsd
+           http://www.springframework.org/schema/context
+           http://www.springframework.org/schema/context/spring-context.xsd">
+
+    <context:component-scan base-package="com.example"/>
+    <!-- Channels -->
+    <int:channel id="shebaInputChannel"/>
+
+
+    <!-- Gateways -->
+    <int-http:inbound-gateway
+            id="shebaGateway"
+            request-channel="shebaInputChannel"
+            path="/ayande/sheba/{shebaNumber}"
+            supported-methods="GET"
+            reply-channel="shebaOutputChannel"
+            error-channel="shebaErrorChannel"/>
+
+    <!-- Invalid Gateways -->
+    <int-http:inbound-gateway
+            request-channel="shebaInputChannel"
+            path="/ayande/sheba/"
+            supported-methods="GET"
+            reply-channel="shebaOutputChannel"
+            error-channel="shebaErrorChannel"/>
+
+    <!-- Main Flow -->
+    <int:chain input-channel="shebaInputChannel"
+               output-channel="shebaOutputChannel">
+
+        <!-- Step 1: Extract URL from message headers -->
+        <int:transformer expression="headers['http_requestUrl']"/>
+
+        <!-- Step 2: Validate URL -->
+        <int:service-activator ref="ayandeValidator" method="urlValidation"/>
+
+        <!-- Step 3: Extract Sheba from URL -->
+        <int:transformer ref="shebaService" method="findShebaFromUrl"/>
+
+        <!-- Step 4: Validate Sheba -->
+        <int:service-activator ref="ayandeValidator" method="shebaValidation"/>
+
+        <!-- Step 5: Find accountNumber and build AyandeDto -->
+        <int:transformer ref="shebaService" method="makeAyandeDtoBySheba"/>
+
+        <!-- Step 6: Build AyandeResponse from AyandeDto  -->
+        <int:transformer expression="new com.example.ayande.base.AyandeResponse(payload)"/>
+    </int:chain>
+
+</beans>
